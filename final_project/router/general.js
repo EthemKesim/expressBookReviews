@@ -1,4 +1,5 @@
 const express = require('express');
+const axios = require('axios');
 let books = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
@@ -30,61 +31,70 @@ public_users.post("/register", (req,res) => {
   return res.status(404).json({message: "Unable to register user."});
 });
 
-// Task 10
+
+// =========================
+// Task 10 – Get all books (Axios + Promise)
+// =========================
 function getBookList(){
   return new Promise((resolve,reject)=>{
-    resolve(books);
+    axios.get("http://localhost:5000/")
+      .then(response => resolve(response.data))
+      .catch(() => reject("Error fetching books"));
   })
 }
 
-// Get the book list available in the shop
 public_users.get('/',function (req, res) {
-  getBookList().then(
-    (bk)=>res.status(200).send(JSON.stringify(bk, null, 4)),
-    ()=>res.status(500).json({message:"Error fetching books"})
-  );  
+  getBookList()
+    .then(bk => res.status(200).send(JSON.stringify(bk, null, 4)))
+    .catch(err => res.status(500).json({message: err}));
 });
 
-// Task 11
+
+// =========================
+// Task 11 – Get book by ISBN (Axios + Promise)
+// =========================
 function getFromISBN(isbn){
-  let book_ = books[isbn];  
   return new Promise((resolve,reject)=>{
-    if (book_) {
-      resolve(book_);
-    }else{
-      reject("Unable to find book!");
-    }    
+    axios.get(`http://localhost:5000/isbn/${isbn}`)
+      .then(response => resolve(response.data))
+      .catch(() => reject("Unable to find book!"));
   })
 }
 
-// Get book details based on ISBN
 public_users.get('/isbn/:isbn',function (req, res) {
   const isbn = req.params.isbn;
-  getFromISBN(isbn).then(
-    (bk)=>res.status(200).send(JSON.stringify(bk, null, 4)),
-    (error)=>res.status(404).json({message:error})
-  )
+  getFromISBN(isbn)
+    .then(bk => res.status(200).send(JSON.stringify(bk, null, 4)))
+    .catch(error => res.status(404).json({message:error}));
 });
 
-// Task 12
+
+// =========================
+// Task 12 – Get books by Author (Axios + Promise)
+// =========================
 function getFromAuthor(author){
-  let output = [];
   return new Promise((resolve,reject)=>{
-    for (var isbn in books) {
-      let book_ = books[isbn];
-      if (book_.author === author){
-        output.push(book_);
-      }
-    }
-    if (output.length > 0) {
-      resolve(output);
-    } else {
-      reject("Author not found");
-    }
+    axios.get("http://localhost:5000/")
+      .then(response => {
+        let output = [];
+        let booksData = response.data;
+
+        for (let isbn in booksData) {
+          if (booksData[isbn].author === author) {
+            output.push(booksData[isbn]);
+          }
+        }
+
+        if (output.length > 0) {
+          resolve(output);
+        } else {
+          reject("Author not found");
+        }
+      })
+      .catch(() => reject("Error fetching books"));
   })
 }
 
-// Get book details based on author
 public_users.get('/author/:author',function (req, res) {
   const author = req.params.author;
   getFromAuthor(author)
@@ -96,25 +106,33 @@ public_users.get('/author/:author',function (req, res) {
     );
 });
 
-// Task 13
+
+// =========================
+// Task 13 – Get books by Title (Axios + Promise)
+// =========================
 function getFromTitle(title){
-  let output = [];
   return new Promise((resolve,reject)=>{
-    for (var isbn in books) {
-      let book_ = books[isbn];
-      if (book_.title === title){
-        output.push(book_);
-      }
-    }
-    if (output.length > 0) {
-      resolve(output);
-    } else {
-      reject("Title not found");
-    }
+    axios.get("http://localhost:5000/")
+      .then(response => {
+        let output = [];
+        let booksData = response.data;
+
+        for (let isbn in booksData) {
+          if (booksData[isbn].title === title) {
+            output.push(booksData[isbn]);
+          }
+        }
+
+        if (output.length > 0) {
+          resolve(output);
+        } else {
+          reject("Title not found");
+        }
+      })
+      .catch(() => reject("Error fetching books"));
   })
 }
 
-// Get all books based on title
 public_users.get('/title/:title',function (req, res) {
   const title = req.params.title;
   getFromTitle(title)
@@ -126,7 +144,10 @@ public_users.get('/title/:title',function (req, res) {
     );
 });
 
-// Get book review
+
+// =========================
+// Get book review (unchanged)
+// =========================
 public_users.get('/review/:isbn',function (req, res) {
   const ISBN = req.params.isbn;
   res.send(books[ISBN].reviews)
