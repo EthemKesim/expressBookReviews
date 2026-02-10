@@ -134,26 +134,36 @@ public_users.get('/isbn/:isbn',function (req, res) {
 // Add the code for getting the book details based on Author (done in Task 3) using Promise callbacks or async-await with Axios.
 
 function getFromAuthor(author){
-  let output = [];
-  return new Promise((resolve,reject)=>{
-    for (var isbn in books) {
-      let book_ = books[isbn];
-      if (book_.author === author){
-        output.push(book_);
+    let output = [];
+    return new Promise((resolve,reject)=>{
+      for (var isbn in books) {
+        let book_ = books[isbn];
+        if (book_.author === author){
+          output.push(book_);
+        }
       }
-    }
-    resolve(output);  
-  })
-}
+  
+      // 🔴 EKLENEN KISIM
+      if (output.length > 0) {
+        resolve(output);
+      } else {
+        reject("Author not found");
+      }
+    })
+  }
 
 // Get book details based on author
 public_users.get('/author/:author',function (req, res) {
-  const author = req.params.author;
-  getFromAuthor(author)
-  .then(
-    result =>res.send(JSON.stringify(result, null, 4))
-  );
-});
+    const author = req.params.author;
+    getFromAuthor(author)
+      .then(result =>
+        res.status(200).send(JSON.stringify(result, null, 4))
+      )
+      // 🔴 EKLENEN KISIM
+      .catch(error =>
+        res.status(404).json({ message: error })
+      );
+  });
 
 // Task 13
 // Add the code for getting the book details based on Title (done in Task 4) using Promise callbacks or async-await with Axios.
